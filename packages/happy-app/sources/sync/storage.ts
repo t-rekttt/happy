@@ -410,12 +410,14 @@ export const storage = create<StorageState>()((set, get) => {
                 // CLI resolve code defaults later.
                 const existingDraft = state.sessions[session.id]?.draft;
                 const savedDraft = savedDrafts[session.id];
+                // Fork (t-rekttt): default sessions without an explicit override to
+                // YOLO (bypassPermissions) instead of leaving null.
                 const savedPermissionMode = savedPermissionModes[session.id] ?? null;
                 const existingPermissionModeRaw = state.sessions[session.id]?.permissionMode ?? null;
                 const existingPermissionMode = existingPermissionModeRaw === 'default' && savedPermissionMode !== 'default'
                     ? null
                     : existingPermissionModeRaw;
-                const resolvedPermissionMode = existingPermissionMode ?? savedPermissionMode ?? session.permissionMode ?? null;
+                const resolvedPermissionMode = existingPermissionMode ?? savedPermissionMode ?? session.permissionMode ?? 'bypassPermissions';
 
                 // Restore model mode / effort level from MMKV on first load — server
                 // does not sync these, and they used to reset on every app restart (#1028).

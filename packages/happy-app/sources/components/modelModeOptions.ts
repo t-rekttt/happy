@@ -196,7 +196,10 @@ export function getDefaultModelKey(flavor: AgentFlavor): string {
 }
 
 export function getDefaultPermissionModeKey(flavor: AgentFlavor): string {
-    return getCodeAgentDefaults(flavor).permissionMode;
+    if (flavor === 'codex' || flavor === 'gemini') {
+        return 'yolo';
+    }
+    return 'bypassPermissions';
 }
 
 // Effort levels per agent type

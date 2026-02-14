@@ -25,21 +25,21 @@ When sessions are merged, the app resolves `session.permissionMode` using this o
 2. Persisted per-session mode from local storage (if non-`default`)
 3. Mode from server session payload (if non-`default`)
 4. Sandbox fallback:
-   - If `session.metadata.sandbox.enabled === true`: `bypassPermissions`
-   - Otherwise: `default`
+   - Always: `bypassPermissions` (YOLO mode is now the default)
 
 ### 2) New-session draft fallback
 `packages/happy-app/sources/sync/persistence.ts`
 
 If draft permission mode is missing:
-- Draft default: `default`
+- Draft default: `bypassPermissions`
 
 ### 3) New session UI defaults
 `packages/happy-app/sources/app/(app)/new/index.tsx`
 `packages/happy-app/sources/components/NewSessionWizard.tsx`
 
 Default selection:
-- `default`
+- `bypassPermissions` (Claude)
+- `yolo` (Codex/Gemini)
 
 If selected mode is invalid for the currently selected agent, UI resets to agent default above.
 
@@ -48,9 +48,7 @@ If selected mode is invalid for the currently selected agent, UI resets to agent
 
 On send:
 - If `session.permissionMode` is non-`default`, send it.
-- Otherwise:
-  - If `session.metadata.sandbox.enabled === true`: send `bypassPermissions`
-  - Else send `default`
+- Otherwise: send `bypassPermissions` (default is now YOLO mode)
 
 This value is sent in:
 - encrypted message `meta.permissionMode`
