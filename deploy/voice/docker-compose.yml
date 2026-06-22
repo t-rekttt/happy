@@ -1,0 +1,46 @@
+# Self-hosted LiveKit for the Happy voice assistant (VM/LXC path).
+#
+# Usage:
+#   1) cp .env.example .env  and fill in values (generate keys, see below)
+#   2) Provide TURN TLS cert at ./certs/turn.crt and ./certs/turn.key
+#      (e.g. from your ACME/Caddy/Let's Encrypt setup for $LIVEKIT_TURN_DOMAIN)
+#   3) docker compose up -d
+#
+# Generate an API key/secret pair:
+#   docker run --rm livekit/livekit-server generate-keys
+# then set LIVEKIT_KEYS="<key>: <secret>" in .env
+#
+# NOTE: host networking is required so WebRTC media (UDP) is directly reachable.
+# This works on Linux hosts only. For Kubernetes use the official LiveKit Helm
+# chart instead of this compose file.
+
+services:
+  livekit:
+    image: livekit/livekit-server:v1.8
+    restart: unless-stopped
+    # Host networking: media UDP range + TURN must be reachable from mobile.
+    network_mode: host
+    command: --config /etc/livekit/livekit.yaml
+    environment:
+      # API key/secret pair, kept out of the committed config file.
+      # Format: "APIxxxx: secretxxxx"
+      LIVEKIT_KEYS: ${LIVEKIT_KEYS}
+      # Used by livekit.yaml turn.domain via env substitution.
+      LIVEKIT_TURN_DOMAIN: ${LIVEKIT_TURN_DOMAIN}
+    volumes:
+      - ./livekit.yaml:/etc/livekit/livekit.yaml:ro
+      - ./certs:/etc/livekit/certs:ro
+    # Firewall: open 7880/tcp (signaling), 7881/tcp (tcp media fallback),
+    # 3478/udp + 5349/tcp (TURN), and 50000-50200/udp (media).
+
+  # Voice agent worker (LiveKit Agents). CPU-only — it dials LiveKit over wss and
+  # reaches STT/LLM/TTS as external OpenAI-compatible endpoints (vLLM /
+  # faster-whisper-server / kokoro-fastapi) configured in agent/.env. Colocate
+  # this box with LiveKit and the GPU serving those endpoints.
+  voice-agent:
+    build: ./agent
+    restart: unless-stopped
+    env_file:
+      - ./agent/.env
+    depends_on:
+      - livekit

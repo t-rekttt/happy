@@ -1,0 +1,18 @@
+[project]
+name = "happy-voice-agent"
+version = "0.1.0"
+description = "Self-hosted LiveKit voice agent bridging Happy's app to a local STT/LLM/TTS stack"
+requires-python = ">=3.11"
+
+# Pinned to the livekit-agents 1.x line. The openai plugin backs STT/LLM/TTS via
+# OpenAI-compatible base_url (vLLM / faster-whisper-server / kokoro-fastapi);
+# silero provides on-CPU VAD so the agent container itself needs no GPU.
+dependencies = [
+    "livekit-agents>=1.0,<2",
+    "livekit-plugins-openai>=1.0,<2",
+    "livekit-plugins-silero>=1.0,<2",
+    "python-dotenv>=1.0",
+]
+
+[tool.uv]
+package = false

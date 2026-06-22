@@ -1,0 +1,46 @@
+# LiveKit server config for the Happy self-hosted voice assistant.
+# Non-secret config only. API key/secret are injected via the LIVEKIT_KEYS env
+# var (see .env.example) so this file is safe to commit.
+#
+# Media is WebRTC/UDP and CANNOT traverse an HTTP ingress. Run this with host
+# networking (docker-compose: network_mode: host) on a VM/LXC, or use the
+# official LiveKit Helm chart on Kubernetes (see deploy notes in
+# plans/.../phase-01-livekit-infra.md).
+
+# Signaling (WebSocket). Terminate TLS for wss at your reverse proxy and proxy
+# to this port, OR expose directly behind a TLS terminator.
+port: 7880
+
+rtc:
+  # TCP fallback for restrictive networks that block UDP.
+  tcp_port: 7881
+  # UDP media port range. Open this range on the firewall / security group.
+  # Keep it modest to ease k8s/NodePort mapping; widen if you expect many
+  # concurrent rooms.
+  port_range_start: 50000
+  port_range_end: 50200
+  # Auto-detect the public IP so SDP candidates are reachable from mobile.
+  # Set this to false and use `node_ip` if behind 1:1 NAT with a fixed IP.
+  use_external_ip: true
+
+# Embedded TURN — lets phones on locked-down mobile networks relay media over
+# 443/TLS without a separate coturn deployment. Requires a TLS cert for the
+# TURN domain (mount cert + key, see compose). Disable if your reverse proxy
+# already provides TURN.
+turn:
+  enabled: true
+  domain: ${LIVEKIT_TURN_DOMAIN}
+  tls_port: 5349
+  udp_port: 3478
+  # Cert paths inside the container (mounted in docker-compose.yml).
+  cert_file: /etc/livekit/certs/turn.crt
+  key_file: /etc/livekit/certs/turn.key
+
+# Health/readiness endpoint used by probes.
+# GET http://<host>:7880/  -> 200 when serving; richer health at /healthz on
+# the prometheus port below.
+prometheus_port: 6789
+
+logging:
+  level: info
+  json: false

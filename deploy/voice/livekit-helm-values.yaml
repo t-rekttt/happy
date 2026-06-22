@@ -1,0 +1,47 @@
+# Kubernetes path: values for the official LiveKit Helm chart.
+#   helm repo add livekit https://helm.livekit.io
+#   helm install livekit livekit/livekit-server -n voice --create-namespace \
+#     -f livekit-helm-values.yaml
+#
+# Create the keys secret first (do NOT put secrets in this file):
+#   kubectl -n voice create secret generic livekit-keys \
+#     --from-literal=keys.yaml="$(printf '%s: %s' APIxxxx secretxxxx)"
+# Or wire via your existing Vault ExternalSecret (matches happy-server pattern).
+
+replicaCount: 1
+
+livekit:
+  port: 7880
+  log_level: info
+  rtc:
+    tcp_port: 7881
+    port_range_start: 50000
+    port_range_end: 50200
+    use_external_ip: true
+  turn:
+    enabled: true
+    domain: turn.voice.example.com
+    tls_port: 5349
+    udp_port: 3478
+    # Chart mounts the secret referenced below for the TURN cert.
+    secretName: livekit-turn-cert
+
+# Keys provided via the pre-created secret, not inline.
+keys:
+  secretName: livekit-keys
+
+# WebRTC media (UDP) cannot go through an HTTP ingress. Two supported options:
+#
+# Option A (recommended): host networking — node's IP is used directly for media.
+# Requires the pods to be schedulable on nodes with public reachability + the UDP
+# range open in the node firewall/security group.
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
+
+# Option B: a UDP LoadBalancer exposing the media range (comment out hostNetwork
+# above if you use this). Most cloud LBs need explicit UDP port listing.
+# loadBalancer:
+#   type: LoadBalancer
+
+# TLS for wss signaling goes through your normal ingress/terminator, separate
+# from media. Point your reverse proxy / ingress at the service on port 7880.

@@ -1,0 +1,3 @@
+# Keep secrets and certs out of git.
+.env
+certs/
