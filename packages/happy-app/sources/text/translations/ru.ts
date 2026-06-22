@@ -653,6 +653,10 @@ export const ru: TranslationStructure = {
             autoDetect: 'Автоопределение',
         },
         // Bring your own agent
+        providerTitle: "Голосовой провайдер",
+        providerDescription: "Выберите голосовой бэкенд. Самостоятельный хостинг использует ваш сервер LiveKit и агента вместо ElevenLabs.",
+        selfHostedTitle: "Самостоятельный голос",
+        selfHostedSubtitle: "Используйте свой сервер LiveKit и агента",
         byoTitle: 'Используйте своего агента',
         byoDescription: 'Используйте собственного агента ElevenLabs вместо стандартного Happy. Подписка не требуется — подключайтесь напрямую через свой аккаунт ElevenLabs. Ваш агент должен определить два клиентских инструмента: messageClaudeCode (отправляет текст агенту кодирования) и processPermissionRequest (разрешает или запрещает использование инструментов). Контекст сессии передаётся через динамическую переменную {{initialConversationContext}}.',
         customAgentId: 'ElevenLabs Agent ID',

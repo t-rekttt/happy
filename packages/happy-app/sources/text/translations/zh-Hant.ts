@@ -637,6 +637,10 @@ export const zhHant: TranslationStructure = {
             autoDetect: '自動偵測',
         },
         // Bring your own agent
+        providerTitle: "语音提供者",
+        providerDescription: "選擇語音後端。自架將使用你自己的 LiveKit 伺服器和代理，而非 ElevenLabs。",
+        selfHostedTitle: "自架語音",
+        selfHostedSubtitle: "使用你自己的 LiveKit 和代理伺服器",
         byoTitle: '使用自己的代理',
         byoDescription: '使用您自己的 ElevenLabs 代理取代 Happy 預設代理。無需訂閱 — 直接使用您自己的 ElevenLabs 帳戶連線。您的代理必須定義兩個用戶端工具：messageClaudeCode（向編碼代理傳送文字）和 processPermissionRequest（允許或拒絕工具使用）。透過 {{initialConversationContext}} 動態變數接收工作階段上下文。',
         customAgentId: 'ElevenLabs Agent ID',

@@ -638,6 +638,10 @@ export const ja: TranslationStructure = {
             autoDetect: '自動検出',
         },
         // Bring your own agent
+        providerTitle: "音声プロバイダー",
+        providerDescription: "音声バックエンドを選択します。セルフホストでは ElevenLabs の代わりに自分の LiveKit サーバーとエージェントを使用します。",
+        selfHostedTitle: "セルフホスト音声",
+        selfHostedSubtitle: "自分の LiveKit とエージェントサーバーを使用",
         byoTitle: '自分のエージェントを使う',
         byoDescription: 'Happy のデフォルトの代わりに、独自の ElevenLabs エージェントを使用します。サブスクリプション不要 — 自分の ElevenLabs アカウントで直接接続できます。エージェントには2つのクライアントツールを定義する必要があります: messageClaudeCode（コーディングエージェントにテキストを送信）と processPermissionRequest（ツール使用を許可または拒否）。セッションコンテキストは {{initialConversationContext}} 動的変数を通じて受信されます。',
         customAgentId: 'ElevenLabs Agent ID',

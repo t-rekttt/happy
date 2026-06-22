@@ -1,5 +1,5 @@
 import type { VoiceSession } from './types';
-import { fetchVoiceCredentials } from '@/sync/apiVoice';
+import { fetchVoiceCredentials, fetchLocalVoiceCredentials } from '@/sync/apiVoice';
 import { sync } from '@/sync/sync';
 import { Modal } from '@/modal';
 import { TokenStorage } from '@/auth/tokenStorage';
@@ -47,6 +47,11 @@ export async function startRealtimeSession(sessionId: string, initialContext?: s
     }
 
     try {
+        // Self-hosted provider — connect to the user's own LiveKit voice stack.
+        if (storage.getState().settings.voiceProvider === 'local') {
+            return await startLocalRealtimeSession(sessionId, initialContext);
+        }
+
         // Bypass Happy server token — only when user has their own custom agent
         const { voiceBypassToken, voiceCustomAgentId } = storage.getState().settings;
         if (voiceBypassToken && voiceCustomAgentId) {
@@ -154,6 +159,53 @@ export async function startRealtimeSession(sessionId: string, initialContext?: s
         Modal.alert(t('common.error'), t('errors.voiceServiceUnavailable'));
         return null;
     }
+}
+
+/**
+ * Self-hosted voice start: fetch a LiveKit join token from happy-server and hand
+ * the registered local VoiceSession everything it needs. No paywall/metering — the
+ * user owns the infrastructure. Errors propagate to the caller's catch, which
+ * resets status and alerts.
+ */
+async function startLocalRealtimeSession(sessionId: string, initialContext?: string): Promise<string | null> {
+    const credentials = await TokenStorage.getCredentials();
+    if (!credentials) {
+        storage.getState().setRealtimeStatus('disconnected');
+        Modal.alert(t('common.error'), t('errors.authenticationFailed'));
+        return null;
+    }
+
+    const local = await fetchLocalVoiceCredentials(credentials, sessionId);
+
+    const hasPro = storage.getState().purchases.entitlements['pro'] ?? false;
+    const onboardingPromptLoadCount = getVoiceOnboardingPromptLoadCount();
+    const voiceMessageCount = getVoiceMessageCount();
+    const systemPrompt = buildVoiceSystemPrompt({
+        initialContext,
+        onboardingPromptLoadCount,
+        voiceMessageCount,
+        includePaidVoiceOnboarding: false,
+    });
+    const firstMessage = buildVoiceFirstMessage({
+        hasPro,
+        onboardingPromptLoadCount,
+        includePaidVoiceOnboarding: false,
+    });
+
+    currentSessionId = sessionId;
+    const startedConversationId = await voiceSession!.startSession({
+        sessionId,
+        initialContext,
+        systemPrompt,
+        firstMessage,
+        livekitUrl: local.url,
+        livekitToken: local.token,
+        roomName: local.roomName,
+    });
+    currentVoiceConversationId = startedConversationId;
+    currentVoiceSessionStartedAt = Date.now();
+    voiceSessionStarted = true;
+    return startedConversationId;
 }
 
 export async function stopRealtimeSession() {

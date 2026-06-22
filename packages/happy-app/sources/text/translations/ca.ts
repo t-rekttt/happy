@@ -637,6 +637,10 @@ export const ca: TranslationStructure = {
             autoDetect: 'Detecta automàticament',
         },
         // Bring your own agent
+        providerTitle: "Proveïdor de veu",
+        providerDescription: "Tria el backend de veu. L'opció autoallotjada fa servir el teu propi servidor LiveKit i agent en lloc d'ElevenLabs.",
+        selfHostedTitle: "Veu autoallotjada",
+        selfHostedSubtitle: "Fes servir el teu propi servidor LiveKit i agent",
         byoTitle: 'Porta el teu propi agent',
         byoDescription: 'Utilitza el teu propi agent d\'ElevenLabs en lloc del predeterminat de Happy. No cal subscripció — connecta directament amb el teu propi compte d\'ElevenLabs. El teu agent ha de definir dues eines de client: messageClaudeCode (envia text a l\'agent de codi) i processPermissionRequest (permet o denega l\'ús d\'eines). Rep el context de la sessió a través de la variable dinàmica {{initialConversationContext}}.',
         customAgentId: 'ElevenLabs Agent ID',

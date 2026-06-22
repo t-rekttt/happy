@@ -1,14 +1,20 @@
 import React from 'react';
 import { RealtimeVoiceSession } from './RealtimeVoiceSession';
-import { useVoiceSessionGeneration } from '@/sync/storage';
+import { LocalRealtimeVoiceSession } from './LocalRealtimeVoiceSession';
+import { useVoiceSessionGeneration, useSetting } from '@/sync/storage';
 
 export const RealtimeProvider = ({ children }: { children: React.ReactNode }) => {
-    // Web SDK (@elevenlabs/react) uses a plain WebSocket — no LiveKit Room to
-    // go stale — so this re-key is mostly defensive. Kept symmetric with native.
+    // ElevenLabs web SDK uses a plain WebSocket; the local provider uses a LiveKit
+    // Room (re-key on generation so a fresh Room is created each session).
     const generation = useVoiceSessionGeneration();
+    const voiceProvider = useSetting('voiceProvider');
     return (
         <>
-            <RealtimeVoiceSession key={generation} />
+            {voiceProvider === 'local' ? (
+                <LocalRealtimeVoiceSession key={generation} />
+            ) : (
+                <RealtimeVoiceSession key={generation} />
+            )}
             {children}
         </>
     );

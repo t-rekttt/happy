@@ -650,6 +650,11 @@ export const en = {
             footer: ({ count }: { count: number }) => `${count} ${plural({ count, singular: 'language', plural: 'languages' })} available`,
             autoDetect: 'Auto-detect',
         },
+        // Voice provider (ElevenLabs vs self-hosted LiveKit)
+        providerTitle: 'Voice Provider',
+        providerDescription: 'Choose the voice backend. Self-hosted uses your own LiveKit server and agent instead of ElevenLabs.',
+        selfHostedTitle: 'Self-hosted voice',
+        selfHostedSubtitle: 'Use your own LiveKit and agent server',
         // Bring your own agent
         byoTitle: 'Bring Your Own Agent',
         byoDescription: 'Use your own ElevenLabs agent instead of the Happy default. No subscription required — connect directly with your own ElevenLabs account. Your agent must define two client tools: messageClaudeCode (sends text to the coding agent) and processPermissionRequest (allows or denies tool use). It receives session context via the {{initialConversationContext}} dynamic variable.',

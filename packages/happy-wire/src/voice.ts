@@ -34,3 +34,17 @@ export const VoiceUsageResponseSchema = z.object({
 });
 
 export type VoiceUsageResponse = z.infer<typeof VoiceUsageResponseSchema>;
+
+// --- Self-hosted (local) voice provider ---
+// Token the app uses to join a LiveKit room served by the user's own
+// infrastructure. happy-server signs this offline; it never calls LiveKit.
+export const VoiceLocalTokenResponseSchema = z.object({
+    // wss signaling URL of the self-hosted LiveKit server.
+    url: z.string(),
+    // Short-lived LiveKit access JWT scoped to `roomName`.
+    token: z.string(),
+    // Deterministic per user+session so the agent worker can correlate context.
+    roomName: z.string(),
+});
+
+export type VoiceLocalTokenResponse = z.infer<typeof VoiceLocalTokenResponseSchema>;

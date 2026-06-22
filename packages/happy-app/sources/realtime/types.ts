@@ -3,9 +3,14 @@ export interface VoiceSessionConfig {
     initialContext?: string;
     systemPrompt?: string;
     firstMessage?: string;
+    // ElevenLabs provider
     conversationToken?: string;
     agentId?: string;
     userId?: string;
+    // Self-hosted LiveKit provider
+    livekitUrl?: string;
+    livekitToken?: string;
+    roomName?: string;
 }
 
 export interface VoiceSession {

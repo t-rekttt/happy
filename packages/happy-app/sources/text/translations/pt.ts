@@ -636,6 +636,10 @@ export const pt: TranslationStructure = {
             autoDetect: 'Detectar automaticamente',
         },
         // Bring your own agent
+        providerTitle: "Provedor de voz",
+        providerDescription: "Escolha o backend de voz. A opção auto-hospedada usa seu próprio servidor LiveKit e agente em vez do ElevenLabs.",
+        selfHostedTitle: "Voz auto-hospedada",
+        selfHostedSubtitle: "Use seu próprio servidor LiveKit e agente",
         byoTitle: 'Traga seu próprio agente',
         byoDescription: 'Use seu próprio agente ElevenLabs em vez do padrão do Happy. Nenhuma assinatura necessária — conecte-se diretamente com sua própria conta ElevenLabs. Seu agente deve definir duas ferramentas de cliente: messageClaudeCode (envia texto ao agente de código) e processPermissionRequest (permite ou nega o uso de ferramentas). Recebe o contexto da sessão através da variável dinâmica {{initialConversationContext}}.',
         customAgentId: 'ElevenLabs Agent ID',

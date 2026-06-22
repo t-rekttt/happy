@@ -31,6 +31,7 @@ export default React.memo(function VoiceSettingsScreen() {
     const [voiceAssistantLanguage] = useSettingMutable('voiceAssistantLanguage');
     const [voiceCustomAgentId, setVoiceCustomAgentId] = useSettingMutable('voiceCustomAgentId');
     const [voiceBypassToken, setVoiceBypassToken] = useSettingMutable('voiceBypassToken');
+    const [voiceProvider, setVoiceProvider] = useSettingMutable('voiceProvider');
     const [voiceUpsellOverride, setVoiceUpsellOverride] = useLocalSettingMutable('voiceUpsellOverride');
     const experiments = useSetting('experiments');
     const devModeEnabled = __DEV__ || useLocalSetting('devModeEnabled');
@@ -218,6 +219,24 @@ export default React.memo(function VoiceSettingsScreen() {
                     />
                 </ItemGroup>
             )}
+
+            {/* Voice Provider — ElevenLabs cloud vs self-hosted LiveKit stack */}
+            <ItemGroup
+                title={t('settingsVoice.providerTitle')}
+                footer={t('settingsVoice.providerDescription')}
+            >
+                <Item
+                    title={t('settingsVoice.selfHostedTitle')}
+                    subtitle={t('settingsVoice.selfHostedSubtitle')}
+                    icon={<Ionicons name="server-outline" size={29} color="#34C759" />}
+                    rightElement={
+                        <Switch
+                            value={voiceProvider === 'local'}
+                            onValueChange={(on) => setVoiceProvider(on ? 'local' : 'elevenlabs')}
+                        />
+                    }
+                />
+            </ItemGroup>
 
             {/* Language Settings */}
             <ItemGroup
