@@ -6,11 +6,17 @@ const name = {
     preview: "Happy (preview)",
     production: "Happy"
 }[variant];
-const bundleId = {
+// HAPPY_BUNDLE_ID overrides the per-variant id — needed for free Apple ID
+// (Personal Team) signing, where the bundle id must be unique to your team.
+const bundleId = process.env.HAPPY_BUNDLE_ID || {
     development: "com.slopus.happy.dev",
     preview: "com.slopus.happy.preview",
     production: "com.ex3ndr.happy"
 }[variant];
+// HAPPY_FREE_SIGNING=1 drops capabilities a free Apple ID can't sign (push
+// notifications), so `expo prebuild` produces a project that builds with a
+// Personal Team. Leave unset for normal (paid-account / EAS) builds.
+const freeSigning = process.env.HAPPY_FREE_SIGNING === '1';
 // const stagingElevenLabsAgentId = 'agent_7801k2c0r5hjfraa1kdbytpvs6yt';
 const productionElevenLabsAgentId = 'agent_6701k211syvvegba4kt7m68nxjmw';
 const elevenLabsAgentId = {
@@ -178,13 +184,15 @@ export default {
                     recordAudioAndroid: true
                 }
             ],
-            [
+            // Omitted under HAPPY_FREE_SIGNING: the push entitlement can't be
+            // signed by a free Apple ID.
+            ...(freeSigning ? [] : [[
                 "expo-notifications",
                 {
                     "enableBackgroundRemoteNotifications": true,
                     "icon": "./sources/assets/images/icon-notification.png"
                 }
-            ],
+            ]]),
             [
                 'expo-splash-screen',
                 {
