@@ -9,7 +9,7 @@ const name = {
 // HAPPY_BUNDLE_ID overrides the per-variant id — needed for free Apple ID
 // (Personal Team) signing, where the bundle id must be unique to your team.
 const bundleId = process.env.HAPPY_BUNDLE_ID || {
-    development: "com.slopus.happy.dev",
+    development: "pw.thao.happy.dev",
     preview: "com.slopus.happy.preview",
     production: "com.ex3ndr.happy"
 }[variant];
