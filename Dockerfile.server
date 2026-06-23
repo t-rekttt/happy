@@ -33,7 +33,9 @@ COPY packages/happy-wire ./packages/happy-wire
 COPY packages/happy-server ./packages/happy-server
 
 RUN pnpm --filter @slopus/happy-wire build
-RUN pnpm --filter happy-server-self-host build
+# No server build: runtime runs sources directly via tsx (see CMD), so the
+# tsc/bundle step is unnecessary — and it would fail here because the server's
+# specs import happy-app, which isn't in this build context.
 
 # Stage 3: runtime
 FROM node:20 AS runner
