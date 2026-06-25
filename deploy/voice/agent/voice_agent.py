@@ -177,7 +177,10 @@ async def entrypoint(ctx: JobContext) -> None:
         logger.warning("No init payload within %.0fs; using token metadata", INIT_TIMEOUT)
     overrides = {**_overrides_from_token(participant), **init_overrides}
     focused_session_id = overrides.get("focusedSessionId") or overrides.get("sessionId")
-    language = overrides.get("language")
+    # Default to English and normalize locale/region codes to a bare ISO-639
+    # code (e.g. "en-US" -> "en", "pt-br" -> "pt"). livekit-agents' LanguageCode()
+    # rejects None and region-only codes (crashes openai.STT init otherwise).
+    language = (overrides.get("language") or "en").split("-")[0].strip().lower() or "en"
     logger.info("Voice session: room=%s human=%s session=%s", ctx.room.name, human_identity, focused_session_id)
 
     session = AgentSession(
