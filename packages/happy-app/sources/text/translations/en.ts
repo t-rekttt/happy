@@ -499,6 +499,13 @@ export const en: TranslationStructure = {
         noMachinesAvailable: 'No machines',
     },
 
+    machineClaudeSessions: {
+        title: "Claude sessions",
+        link: "Resume a Claude session",
+        footer: "Sessions started with the Claude CLI on this machine. Tap one to resume it in Happy.",
+        empty: "No Claude sessions found on this machine.",
+        adoptFailed: "Failed to resume session.",
+    },
     machineLauncher: {
         showLess: 'Show less',
         showAll: ({ count }: { count: number }) => `Show all (${count} paths)`,

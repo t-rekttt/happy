@@ -501,6 +501,13 @@ export const pl: TranslationStructure = {
         noMachinesAvailable: 'Brak maszyn',
     },
 
+    machineClaudeSessions: {
+        title: "Sesje Claude",
+        link: "Wznów sesję Claude",
+        footer: "Sesje uruchomione za pomocą CLI Claude na tym komputerze. Dotknij jedną, aby wznowić ją w Happy.",
+        empty: "Nie znaleziono sesji Claude na tym komputerze.",
+        adoptFailed: "Nie udało się wznowić sesji.",
+    },
     machineLauncher: {
         showLess: 'Pokaż mniej',
         showAll: ({ count }: { count: number }) => `Pokaż wszystkie (${count} ${plural({ count, one: 'ścieżka', few: 'ścieżki', many: 'ścieżek' })})`,

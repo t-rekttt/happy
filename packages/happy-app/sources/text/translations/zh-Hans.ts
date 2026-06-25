@@ -486,6 +486,13 @@ export const zhHans: TranslationStructure = {
         noMachinesAvailable: '无设备',
     },
 
+    machineClaudeSessions: {
+        title: "Claude 会话",
+        link: "恢复 Claude 会话",
+        footer: "在此机器上通过 Claude CLI 启动的会话。点按其中一个即可在 Happy 中恢复。",
+        empty: "此机器上未找到 Claude 会话。",
+        adoptFailed: "恢复会话失败。",
+    },
     machineLauncher: {
         showLess: '显示更少',
         showAll: ({ count }: { count: number }) => `显示全部 (${count} 个路径)`,

@@ -446,6 +446,16 @@ export default function MachineDetailScreen() {
                             )}
                         </View>
                         </ItemGroup>
+                        {/* Adopt a Claude CLI session into Happy */}
+                        {isMachineOnline(machine) && metadata?.cliAvailability?.claude !== false && (
+                            <ItemGroup footer={t('machineClaudeSessions.footer')}>
+                                <Item
+                                    title={t('machineClaudeSessions.link')}
+                                    leftElement={<Ionicons name="time-outline" size={24} color={theme.colors.textSecondary} />}
+                                    onPress={() => router.push(`/machine/claude-sessions?machineId=${machineId}`)}
+                                />
+                            </ItemGroup>
+                        )}
                     </>
                 )}
 

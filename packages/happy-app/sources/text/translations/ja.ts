@@ -486,6 +486,13 @@ export const ja: TranslationStructure = {
         noMachinesAvailable: 'マシンなし',
     },
 
+    machineClaudeSessions: {
+        title: "Claude セッション",
+        link: "Claude セッションを再開",
+        footer: "このマシンで Claude CLI から開始したセッション。タップして Happy で再開します。",
+        empty: "このマシンに Claude セッションが見つかりません。",
+        adoptFailed: "セッションを再開できませんでした。",
+    },
     machineLauncher: {
         showLess: '折りたたむ',
         showAll: ({ count }: { count: number }) => `すべて表示 (${count}パス)`,

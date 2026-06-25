@@ -485,6 +485,13 @@ export const ca: TranslationStructure = {
         noMachinesAvailable: 'Sense màquines',
     },
 
+    machineClaudeSessions: {
+        title: "Sessions de Claude",
+        link: "Reprèn una sessió de Claude",
+        footer: "Sessions iniciades amb la CLI de Claude en aquesta màquina. Toca'n una per reprendre-la a Happy.",
+        empty: "No s'han trobat sessions de Claude en aquesta màquina.",
+        adoptFailed: "No s'ha pogut reprendre la sessió.",
+    },
     machineLauncher: {
         showLess: 'Mostra menys',
         showAll: ({ count }: { count: number }) => `Mostra tots (${count} camins)`,

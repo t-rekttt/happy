@@ -484,6 +484,13 @@ export const pt: TranslationStructure = {
         noMachinesAvailable: 'Sem máquinas',
     },
 
+    machineClaudeSessions: {
+        title: "Sessões do Claude",
+        link: "Retomar uma sessão do Claude",
+        footer: "Sessões iniciadas com a CLI do Claude nesta máquina. Toque em uma para retomá-la no Happy.",
+        empty: "Nenhuma sessão do Claude encontrada nesta máquina.",
+        adoptFailed: "Falha ao retomar a sessão.",
+    },
     machineLauncher: {
         showLess: 'Mostrar menos',
         showAll: ({ count }: { count: number }) => `Mostrar todos (${count} caminhos)`,

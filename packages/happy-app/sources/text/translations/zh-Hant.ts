@@ -485,6 +485,13 @@ export const zhHant: TranslationStructure = {
         noMachinesAvailable: '無裝置',
     },
 
+    machineClaudeSessions: {
+        title: "Claude 工作階段",
+        link: "恢復 Claude 工作階段",
+        footer: "在此機器上透過 Claude CLI 啟動的工作階段。點按其中一個即可在 Happy 中恢復。",
+        empty: "此機器上找不到 Claude 工作階段。",
+        adoptFailed: "恢復工作階段失敗。",
+    },
     machineLauncher: {
         showLess: '顯示更少',
         showAll: ({ count }: { count: number }) => `顯示全部 (${count} 個路徑)`,

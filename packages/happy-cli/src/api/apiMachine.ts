@@ -15,6 +15,7 @@ import { detectCLIAvailability, CLIAvailability } from '@/utils/detectCLI';
 import { detectResumeSupport, type ResumeSupport } from '@/resume/localHappyAgentAuth';
 import { shouldReconnect } from '@/utils/lidState';
 import { getProjectPath } from '@/claude/utils/path';
+import { scanClaudeSessions } from '@/claude/sessions/scanClaudeSessions';
 import {
     forkSession as claudeForkSession,
     forkAndTruncateSession as claudeForkAndTruncateSession,
@@ -266,6 +267,14 @@ export class ApiMachineClient {
                 }
                 throw error;
             }
+        });
+
+        // List Claude Code sessions on this machine (including plain-`claude` CLI
+        // sessions) so the app can adopt one via spawn-happy-session + resumeClaudeSessionId.
+        this.rpcHandlerManager.registerHandler('claude-list-sessions', async (params: any) => {
+            const limit = typeof params?.limit === 'number' ? params.limit : undefined;
+            const sessions = await scanClaudeSessions({ limit });
+            return { type: 'success', sessions };
         });
 
         this.rpcHandlerManager.registerHandler('codex-fork-thread', async (params: any) => {

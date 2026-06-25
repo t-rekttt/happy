@@ -416,6 +416,37 @@ export async function machineResumeSession(options: ResumeSessionOptions & { mod
     }
 }
 
+// A Claude Code session discovered on a machine (incl. plain-`claude` CLI sessions).
+export interface ClaudeSessionInfo {
+    claudeSessionId: string;
+    /** Real working directory the session ran in (from the jsonl `cwd` field). */
+    cwd: string;
+    /** Session summary or first user message (may be empty). */
+    summary: string;
+    /** Last-modified time of the jsonl, ms since epoch. */
+    modifiedAt: number;
+}
+
+type ListClaudeSessionsResult =
+    | { type: 'success'; sessions: ClaudeSessionInfo[] }
+    | { type: 'error'; errorMessage: string };
+
+/**
+ * List Claude Code sessions stored on a machine so the user can adopt one.
+ * Adoption itself reuses machineSpawnNewSession({ resumeClaudeSessionId, directory }).
+ */
+export async function machineListClaudeSessions(machineId: string, limit?: number): Promise<ClaudeSessionInfo[]> {
+    const result = await apiSocket.machineRPC<ListClaudeSessionsResult, { limit?: number }>(
+        machineId,
+        'claude-list-sessions',
+        { limit },
+    );
+    if (result.type === 'error') {
+        throw new Error(result.errorMessage);
+    }
+    return result.sessions;
+}
+
 /**
  * Permanently remove a machine from the server. Sessions spawned by the
  * machine are preserved; only the Machine row and its AccessKeys are deleted.
