@@ -598,6 +598,9 @@ function SessionViewLoaded({ sessionId, session }: { sessionId: string, session:
             return; // Prevent actions during transitions
         }
         if (realtimeStatus === 'disconnected' || realtimeStatus === 'error') {
+            if (!sessionId) {
+                return; // Voice requires a focused session; nothing to talk to otherwise.
+            }
             try {
                 const initialPrompt = voiceHooks.onVoiceStarted(sessionId);
                 const conversationId = await startRealtimeSession(sessionId, initialPrompt);

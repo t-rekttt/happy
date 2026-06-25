@@ -34,6 +34,15 @@ export async function startRealtimeSession(sessionId: string, initialContext?: s
         return null;
     }
 
+    // Voice always operates on a focused session. Without a session id there is
+    // nothing to talk to, and the self-hosted token route rejects an undefined
+    // sessionId — so bail before showing the connecting state or hitting the network.
+    if (!sessionId) {
+        console.warn('startRealtimeSession called without a sessionId — ignoring');
+        storage.getState().setRealtimeStatus('disconnected');
+        return null;
+    }
+
     // Show connecting state immediately so the user sees feedback
     storage.getState().setRealtimeStatus('connecting');
 
