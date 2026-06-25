@@ -9,6 +9,10 @@ on:
   push:
     tags:
       - 'workspace-v*'
+    branches:
+      # Build on pushes to this branch so the image can be validated before
+      # merging to main. After merge, use workflow_dispatch or a workspace-v* tag.
+      - 'feat/cli-workspace-image'
 
 permissions:
   contents: read
