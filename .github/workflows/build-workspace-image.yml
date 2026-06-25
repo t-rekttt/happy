@@ -1,0 +1,51 @@
+# Builds the Coder workspace image with the fork's Happy CLI baked in and
+# pushes it to GHCR. Trigger manually (workflow_dispatch) or by pushing a
+# `workspace-v*` tag. After it runs, point the Coder template's container_image
+# at ghcr.io/<owner>/happy-workspace:latest (or a :sha pin).
+name: Build workspace image
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'workspace-v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # Produces ./happy-cli-out (self-contained CLI), on the amd64 runner so
+      # native deps match the linux/amd64 image below.
+      - name: Build self-contained Happy CLI
+        run: bash scripts/build-happy-cli-deploy.sh
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/workspace-image/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/happy-workspace:latest
+            ghcr.io/${{ github.repository_owner }}/happy-workspace:${{ github.sha }}

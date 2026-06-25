@@ -12,3 +12,8 @@ node_modules
 **/ios/Pods
 **/src-tauri/target
 **/target
+
+# Keep the self-contained CLI deploy folder in the build context — it bundles
+# its own node_modules/dist (excluded above) and is COPYed into the workspace image.
+!happy-cli-out
+!happy-cli-out/**
