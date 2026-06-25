@@ -87,6 +87,8 @@ default and is untouched when the toggle is off.
 - The agent worker targets **livekit-agents 1.x**. The newest SDK renames a few call
   sites (`AgentServer`/`inference.*`); pin to what you install (see inline notes in
   `voice_agent.py`).
-- STT language is passed through from the app's voice-language setting; some codes
-  (e.g. `pt-br`) may need normalization to ISO (`pt`) for your Whisper server.
+- STT language: the agent defaults to `en` when the app sends none and normalizes
+  region codes to bare ISO-639 (`en-US` -> `en`, `pt-br` -> `pt`) before passing to
+  the STT plugin — `LanguageCode()` rejects `None`/region-only codes and would
+  otherwise crash STT init. See `language = ...` in `voice_agent.py`.
 - Token TTL is 10 minutes (join-time only); the conversation outlives it.
