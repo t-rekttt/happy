@@ -1,0 +1,227 @@
+# .github/workflows/build-unsigned-ipa.yml
+#
+# Build an UNSIGNED iOS .ipa of the "happy" Expo SDK 55 / RN 0.83 app
+# (packages/happy-app) with NO Apple account and NO code signing.
+#
+# Trigger this manually from the Actions tab (workflow_dispatch). It produces a
+# Happy-unsigned.ipa artifact suitable for re-signing/sideloading downstream
+# (TrollStore / AltStore / Sideloadly). It is NOT directly installable on a
+# stock device without later signing.
+#
+# Key project flags (read by happy-app's app.config.js):
+#   APP_ENV=production     -> Expo `name` = "Happy" -> clean scheme "Happy"
+#   HAPPY_FREE_SIGNING=1   -> drops expo-notifications plugin => no aps-environment (push) entitlement
+#   HAPPY_BUNDLE_ID        -> overrides the bundle id (cosmetic for unsigned builds)
+
+name: build-unsigned-ipa
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_id:
+        description: "iOS bundle identifier (HAPPY_BUNDLE_ID)"
+        required: false
+        default: com.example.happy
+      app_env:
+        description: "APP_ENV variant (production yields the clean scheme 'Happy')"
+        required: false
+        default: production
+
+# The build needs nothing more than read access to the repo contents.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Expo SDK 55 / RN 0.83 require Xcode 26.x (SDK 55 bumped the MINIMUM Xcode to 26).
+    # macos-26 is GA (since Feb 2026) and ships Xcode 26.5 as the DEFAULT, so the build is
+    # guaranteed an SDK-55-compatible toolchain. (macos-15 also has 26.x installed but
+    # defaults to the too-old 16.4; if you must use it, the setup-xcode step below picks 26.x.)
+    runs-on: macos-26
+    timeout-minutes: 90
+
+    env:
+      # Project-specific flags consumed by happy-app's config/prebuild.
+      HAPPY_FREE_SIGNING: "1"
+      APP_ENV: ${{ github.event.inputs.app_env }}
+      HAPPY_BUNDLE_ID: ${{ github.event.inputs.bundle_id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- Select the latest stable Xcode (26.x) explicitly for reproducibility ---
+      # On macos-26 latest-stable resolves to Xcode 26.5. Pin a specific version
+      # (e.g. "26.3") if you need byte-for-byte reproducibility across image updates.
+      - name: Select Xcode 26.x
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      # --- FREE DISK SPACE FIRST (the #1 real failure mode on macOS runners) ---
+      # Runners start with only ~14-21 GiB free. A heavy RN/Expo app (WebRTC, Skia,
+      # vision-camera, reanimated v4, Hermes) blows past that with node_modules +
+      # Pods + DerivedData. This frees ~30-60 GB. Run it BEFORE install/build.
+      - name: Free disk space
+        run: |
+          set -euo pipefail
+          echo "Disk before cleanup:"
+          df -h /
+          # Remove Xcode versions we are NOT using (keep the active 26.x).
+          # `xcode-select -p` points at the toolchain setup-xcode selected.
+          ACTIVE_XCODE="$(dirname "$(dirname "$(xcode-select -p)")")"
+          echo "Keeping active Xcode: $ACTIVE_XCODE"
+          for app in /Applications/Xcode_16*.app /Applications/Xcode_15*.app; do
+            if [ -e "$app" ] && [ "$app" != "$ACTIVE_XCODE" ]; then
+              echo "Removing $app"
+              sudo rm -rf "$app" || true
+            fi
+          done
+          # Delete simulator runtimes/devices (each iOS runtime is 5-8 GB).
+          # Use simctl for runtimes (some runtime DMGs are read-only; rm -rf fails on them).
+          xcrun simctl delete unavailable || true
+          sudo xcrun simctl runtime delete all || true
+          # Clear caches/derived data (safe to rm -rf).
+          sudo rm -rf ~/Library/Developer/CoreSimulator/Caches/* || true
+          sudo rm -rf /Library/Developer/CoreSimulator/Images/* || true
+          sudo rm -rf ~/Library/Developer/Xcode/DerivedData/* || true
+          sudo rm -rf "$HOME/Library/Developer/Xcode/iOS DeviceSupport/"* || true
+          echo "Disk after cleanup:"
+          df -h /
+
+      # --- pnpm + Node setup (ORDER MATTERS) ---
+      # pnpm/action-setup MUST come before setup-node, because `cache: pnpm` needs the
+      # pnpm executable to already exist. Do NOT pass `version:` here: the action reads
+      # `packageManager: pnpm@10.11.0` from package.json; passing both errors out with
+      # "Multiple versions of pnpm specified".
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      # --- Install at the MONOREPO ROOT (frozen lockfile) ---
+      # Note: the root postinstall builds @slopus/happy-wire and runs setup-skia-web.
+      # If happy-wire's build is flaky in CI you can prebuild it and set
+      # SKIP_HAPPY_WIRE_BUILD=1, but by default we let it run.
+      - name: Install dependencies (repo root)
+        run: pnpm install --frozen-lockfile
+
+      # --- Expo prebuild (Continuous Native Generation), iOS, clean ---
+      # --clean regenerates a fresh ios/ project (SDK 55 is New-Architecture-only; a
+      # stale ios/ would break the build). The env flags select the production variant,
+      # drop push, and set the bundle id.
+      - name: Expo prebuild (iOS)
+        working-directory: packages/happy-app
+        run: npx expo prebuild --platform ios --clean
+
+      # --- Pod install guard ---
+      # expo prebuild usually runs pod install for you, but in CI that can be skipped or
+      # need a retry. We guard it: if no Pods/ or no .xcworkspace exists, run pod install.
+      - name: Pod install (guarded)
+        working-directory: packages/happy-app/ios
+        run: |
+          set -euo pipefail
+          if ls *.xcworkspace >/dev/null 2>&1 && [ -d Pods ]; then
+            echo "Workspace and Pods present; skipping explicit pod install."
+          else
+            echo "Workspace or Pods missing; running pod install..."
+            if [ -f ../Gemfile ] || [ -f Gemfile ]; then
+              bundle exec pod install --repo-update
+            else
+              pod install --repo-update
+            fi
+          fi
+
+      # --- Unsigned compile with xcodebuild ---
+      # Auto-detect the workspace + scheme via `xcodebuild -list -json` (do NOT hardcode
+      # "Happy"). Build the .xcworkspace (Pods are only wired into the workspace). Disable
+      # signing completely. Use the plain `build` action (more reliable than archive for
+      # unsigned). In Release on iphoneos the JS bundle (Hermes bytecode) is embedded
+      # automatically.
+      - name: Build unsigned .app
+        working-directory: packages/happy-app/ios
+        run: |
+          set -euo pipefail
+
+          WORKSPACE="$(ls -d *.xcworkspace | head -n1)"
+          if [ -z "$WORKSPACE" ]; then
+            echo "ERROR: no .xcworkspace found in $(pwd)" >&2
+            exit 1
+          fi
+          echo "Workspace: $WORKSPACE"
+
+          # Pick the scheme that matches the resolved Expo app name. For APP_ENV=production
+          # that is "Happy". We parse `xcodebuild -list -json` and prefer an exact "Happy"
+          # match, otherwise the first non-Pods scheme. Parsing is done with a single-line
+          # `node -e` so the whole step stays valid YAML (no de-indented heredoc lines).
+          LIST_JSON="$(xcodebuild -list -json -workspace "$WORKSPACE")"
+          echo "$LIST_JSON"
+          SCHEME="$(printf '%s' "$LIST_JSON" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const j=JSON.parse(d);const s=((j.workspace||j.project||{}).schemes)||[];const happy=s.find(x=>x==="Happy");const cand=s.filter(x=>x.toLowerCase()!=="pods"&&!x.startsWith("Pods"));process.stdout.write(happy||cand[0]||s[0]||"")})')"
+          if [ -z "$SCHEME" ]; then
+            echo "ERROR: could not determine a scheme from xcodebuild -list" >&2
+            exit 1
+          fi
+          echo "Scheme: $SCHEME"
+          # Persist for later steps.
+          echo "WORKSPACE=$WORKSPACE" >> "$GITHUB_ENV"
+          echo "SCHEME=$SCHEME" >> "$GITHUB_ENV"
+
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            build
+
+      # --- Repackage the unsigned .app into Happy-unsigned.ipa ---
+      # An .ipa is just a zip with Payload/<App>.app at the top level. No -exportArchive
+      # (that requires signing).
+      - name: Make unsigned IPA
+        working-directory: packages/happy-app/ios
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -n1)"
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: no .app found under build/Build/Products/Release-iphoneos" >&2
+            ls -la build/Build/Products/ || true
+            exit 1
+          fi
+          echo "Built app: $APP_PATH"
+
+          rm -rf payload-stage
+          mkdir -p payload-stage/Payload
+          cp -R "$APP_PATH" payload-stage/Payload/
+          ( cd payload-stage && zip -qry ../Happy-unsigned.ipa Payload )
+          echo "IPA: $(pwd)/Happy-unsigned.ipa"
+          ls -lh Happy-unsigned.ipa
+
+          # Sanity checks (non-fatal): JS bundle embedded? entitlements clean?
+          echo "--- jsbundle check (Hermes bytecode bundle) ---"
+          unzip -l Happy-unsigned.ipa | grep -i jsbundle || echo "WARNING: no main.jsbundle found in IPA"
+          echo "--- entitlements baked into the .app (expected: none/minimal) ---"
+          codesign -d --entitlements - "$APP_PATH" 2>/dev/null || echo "no entitlements (expected for unsigned)"
+
+      # --- Upload the artifact (v4; v3 is deprecated/EOL) ---
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: happy-ios-unsigned-${{ github.event.inputs.app_env }}
+          path: packages/happy-app/ios/Happy-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
