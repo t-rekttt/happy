@@ -38,7 +38,7 @@ jobs:
     # guaranteed an SDK-55-compatible toolchain. (macos-15 also has 26.x installed but
     # defaults to the too-old 16.4; if you must use it, the setup-xcode step below picks 26.x.)
     runs-on: macos-26
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     env:
       # Project-specific flags consumed by happy-app's config/prebuild.
@@ -50,15 +50,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- Select the latest stable Xcode (26.x) explicitly for reproducibility ---
-      # On macos-26 latest-stable resolves to Xcode 26.5. Pin a specific version
-      # (e.g. "26.3") if you need byte-for-byte reproducibility across image updates.
-      - name: Select Xcode 26.x
+      # --- Pin Xcode 26.5 (the macos-26 DEFAULT, which ships the iOS device platform
+      #     pre-installed). Do NOT use latest-stable: it can resolve to a newer RC on
+      #     the image (e.g. 26.6 Release Candidate) whose iOS platform is NOT installed,
+      #     which fails the build with "iOS 26.x is not installed". ---
+      - name: Select Xcode 26.5
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: "26.5"
       - name: Show Xcode version
         run: xcodebuild -version
+
+      # Safety net: make sure the iOS device platform exists for the selected Xcode.
+      # If 26.5 already has it (it does on the image) this prints "already installed"
+      # and exits fast. Non-fatal so a transient hiccup can't kill an otherwise-ready build.
+      - name: Ensure iOS platform is installed
+        run: |
+          sudo xcodebuild -downloadPlatform iOS || xcodebuild -downloadPlatform iOS || true
+          echo "--- available iOS SDKs ---"
+          xcodebuild -showsdks | grep -i iphoneos || true
 
       # --- FREE DISK SPACE FIRST (the #1 real failure mode on macOS runners) ---
       # Runners start with only ~14-21 GiB free. A heavy RN/Expo app (WebRTC, Skia,
@@ -73,7 +83,7 @@ jobs:
           # `xcode-select -p` points at the toolchain setup-xcode selected.
           ACTIVE_XCODE="$(dirname "$(dirname "$(xcode-select -p)")")"
           echo "Keeping active Xcode: $ACTIVE_XCODE"
-          for app in /Applications/Xcode_16*.app /Applications/Xcode_15*.app; do
+          for app in /Applications/Xcode*.app; do
             if [ -e "$app" ] && [ "$app" != "$ACTIVE_XCODE" ]; then
               echo "Removing $app"
               sudo rm -rf "$app" || true
